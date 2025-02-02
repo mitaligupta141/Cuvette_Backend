@@ -175,4 +175,89 @@ router.get('/viewtask/:id',async(req,resp)=>{
   }
 })
 
+
+//getting tasktype count 
+router.get('/tastypecount',authMiddleware,async(req,resp)=>{
+  try {
+    const defaultTaskTypeCounts = {
+      backlog: 0,
+      done: 0,
+      progress: 0,
+      Todo: 0,
+      
+    };
+    const {user} =req
+    console.log(user)
+    const userObjectId = new mongoose.Types.ObjectId(user);
+    const counts = await Task.aggregate([
+      {
+        $match: { creator: userObjectId }
+      },
+      {
+        $group: {
+          _id: "$tasktype",       // Group by taskType
+          count: { $sum: 1 }      // Count each occurrence
+        }
+      }
+    ])
+
+
+
+      // Format the result as an object with task types as keys
+      const taskTypeCounts = counts.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {...defaultTaskTypeCounts});
+  
+      // Send response back to the client
+     return  resp.status(201).json({success:true,data:taskTypeCounts});
+  } catch (error) {
+
+     return resp.status(400).json({success:false,message:error.message})
+  }
+})
+
+
+//getting task priority count 
+router.get('/prioritytype',authMiddleware,async(req,resp)=>{
+  try {
+    const defaultPriorityCounts = {
+      low: 0,
+      mid: 0,
+      high: 0,
+      duedate: 0
+    };
+    const {user} =req
+    const userObjectId = new mongoose.Types.ObjectId(user);
+    const counts = await Task.aggregate([
+      {
+        $match: { creator: userObjectId }
+      },
+      {
+        $group: {
+          _id: "$priority",       // Group by taskType
+          count: { $sum: 1 }      // Count each occurrence
+        }
+      }
+    ])
+    const dueDateCount = await Task.countDocuments({
+      creator: userObjectId,
+      duedate : { $ne: null } // Count tasks with a dueDate that is not null
+    });
+      // Format the result as an object with task types as keys
+      const priorityCounts  = counts.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {...defaultPriorityCounts});
+
+      priorityCounts.duedate = dueDateCount;
+  
+      // Send response back to the client
+     return  resp.status(201).json({success:true,data:priorityCounts});
+  } catch (error) {
+    return resp.status(400).json({success:false,message:error.message})
+  }
+})
+
+
 module.exports = router;
