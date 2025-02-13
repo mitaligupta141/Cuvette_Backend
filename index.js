@@ -17,7 +17,11 @@ const TaskRouter = require('./Routes/task')
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors())
+app.use(cors({
+  origin: "https://pro-manage-sage.vercel.app", // Allow your frontend domain
+  methods: "GET,POST,PUT,DELETE", // Allowed request methods
+  credentials: true 
+}))
 
 
 
